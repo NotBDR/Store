@@ -11,7 +11,7 @@ import rateLimit from 'express-rate-limit';
 import errorMiddleware from './middleware/error.middleware';
 import config from './config';
 import db from './database';
-
+import routes from './routes';
 const PORT = config.port;
 
 //create instance server
@@ -30,41 +30,20 @@ app.use(
     })
 );
 
+app.use('/api', routes);
 //add routing
 app.get('/', (req: Request, res: Response) => {
-    throw new Error('Error');
-
-    res.json({ Message: 'h' });
+    res.json({ Message: 'hello world!' });
 });
 
-app.post('/', (req: Request, res: Response) => {
-    console.log(req.body);
-    res.json({ Message: 'hello from post', data: request.body });
-});
+app.use(errorMiddleware);
 
 app.use((_req: Request, res: Response) => {
     res.status(404).json({ massage: 'Check the route!' });
 });
 
-//test db
-// connection using created pool
-db.connect(function (err, client, done) {
-    return client
-        .query('SELECT NOW()')
-        .then((res) => {
-            done();
-            console.log(res.rows);
-        })
-        .catch((err) => {
-            done();
-            console.log(err.stack);
-        });
-});
 
-// pool shutdown
-db.end();
 
-app.use(errorMiddleware);
 app.listen(PORT, () => {
     console.log(`Server is starting at port:${PORT}`);
 });
