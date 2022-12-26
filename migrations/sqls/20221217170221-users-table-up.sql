@@ -1,6 +1,7 @@
 -- create table user 
+
 CREATE TABLE users(
-    id serial primary key, 
+    id SERIAL PRIMARY KEY , 
     email VARCHAR(50) UNIQUE,
     user_name VARCHAR(50) not null ,
     first_name VARCHAR(50) not null ,
