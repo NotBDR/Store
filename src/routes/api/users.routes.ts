@@ -1,14 +1,18 @@
 import { Router } from 'express';
 import * as controllers from '../../controllers/users.controllers';
-const routes = Router();
+import authMiddleware from '../../middleware/auth.middleware';
 
-routes.route('/').get(controllers.getMany).post(controllers.create);
+const routes = Router();
+routes
+    .route('/')
+    .get(authMiddleware, controllers.getMany)
+    .post(controllers.create);
 routes
     .route('/:id')
-    .get(controllers.getOne)
-    .patch(controllers.updateOne)
-    .delete(controllers.deleteOne);
+    .get(authMiddleware, controllers.getOne)
+    .patch(authMiddleware, controllers.updateOne)
+    .delete(authMiddleware, controllers.deleteOne);
 
-
+routes.route('/auth').post(controllers.authenticate);
 
 export default routes;

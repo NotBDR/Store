@@ -1,5 +1,13 @@
 import User from '../types/user.type';
 import db from '../database';
+import config from '../config';
+import bcrypt from 'bcrypt';
+
+const hashPassword = (password: string) => {
+    const salt = parseInt(config.salt as string, 10);
+    return bcrypt.hashSync(`${password}${config.pepper}`, salt);
+};
+
 class UserModel {
     //create
     async create(u: User): Promise<User> {
@@ -16,7 +24,7 @@ class UserModel {
                 u.user_name,
                 u.first_name,
                 u.last_name,
-                u.password,
+                hashPassword(u.password),
             ]);
             //close connection
             connection.release();
@@ -42,7 +50,7 @@ class UserModel {
         }
     }
     //get specific user
-    async getOne(id: string): Promise<User> {
+    async getOne(id: number): Promise<User> {
         try {
             const connection = await db.connect();
             const sql = `SELECT email,user_name,first_name,last_name from users where id=$1`;
@@ -67,7 +75,7 @@ class UserModel {
                 u.user_name,
                 u.first_name,
                 u.last_name,
-                u.password,
+                hashPassword(u.password),
                 u.id,
             ]);
             connection.release();
@@ -81,7 +89,7 @@ class UserModel {
         }
     }
     //delete user
-    async deleteOne(id: string): Promise<User> {
+    async deleteOne(id: number): Promise<User> {
         try {
             const connection = await db.connect();
             const sql = `DELETE from users where id= $1
@@ -96,5 +104,30 @@ class UserModel {
         }
     }
     //auth user
+    async authenticate(email: string, password: string): Promise<User | null> {
+        try {
+            const connection = await db.connect();
+            const sql = `Select password FROM users WHERE email = $1`;
+            const result = await connection.query(sql, [email]);
+            if (result.rows.length) {
+                const { password: hashPassword } = result.rows[0];
+                const isPasswordValid = bcrypt.compareSync(
+                    `${password}${config.pepper}`,
+                    hashPassword
+                );
+                if (isPasswordValid) {
+                    const userInfo = await connection.query(
+                        `Select id , email , user_name , first_name,  last_name FROM users WHERE email =($1)`,
+                        [email]
+                    );
+                    return userInfo.rows[0];
+                }
+            }
+            connection.release();
+            return null;
+        } catch (error) {
+            throw new Error(`Enable to login: ${(error as Error).message}`);
+        }
+    }
 }
 export default UserModel;
